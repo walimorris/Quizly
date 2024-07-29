@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$id": "https://example.com/youtubevideo.json",
+  "title": "Quizly UserDetails",
+  "description": "UserDetails for quizly application user",
+  "type": "object",
+  "properties": {
+    "_id": {
+      "description": "document id - always",
+      "bsonType": "objectId"
+    },
+    "firstName": {
+      "description": "user first name",
+      "bsonType": "string"
+    },
+    "lastName": {
+      "description": "user last name",
+      "bsonType": "string"
+    },
+    "password": {
+      "description": "encrypted user password",
+      "bsonType": "string"
+    },
+    "emailAddress": {
+      "description": "user email address/username login",
+      "bsonType": "string"
+    },
+    "roles": {
+      "description": "user authority",
+      "bsonType": "array",
+      "items": {
+        "description": "role type",
+        "bsonType": "string"
+      }
+    },
+    "image": {
+      "description": "user image Base64Encoded",
+      "bsonType": "string"
+    },
+    "accountNonExpired": {
+      "description": "is account expired?",
+      "bsonType": "boolean"
+    },
+    "accountNonLocked": {
+      "description": "is account locked?",
+      "bsonType": "boolean"
+    },
+    "credentialsNonExpired": {
+      "description": "is account credentials expired?",
+      "bsonType": "boolean"
+    },
+    "enabled": {
+      "description": "is account enabled?",
+      "bsonType": "boolean"
+    }
+  },
+  "required": [
+    "firstName",
+    "lastName",
+    "password",
+    "emailAddress",
+    "roles",
+    "accountNonExpired",
+    "accountNonLocked",
+    "credentialsNonExpired",
+    "enabled"
+  ],
+  "additionalProperties": false
+}

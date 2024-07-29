@@ -1,0 +1,52 @@
+{
+  "name": "quizly",
+  "version": "0.1.0",
+  "keywords": [
+    "rest",
+    "spring",
+    "react",
+    "aws",
+    "llm",
+    "open-ai",
+    "education",
+    "ed-tech",
+    "natural-language-processing",
+    "NLP"
+  ],
+  "author": "Wali Morris",
+  "homepage": "https://github.com/walimorris",
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/icons-material": "^5.16.4",
+    "@mui/material": "^5.16.4",
+    "@mui/styles": "^5.16.4",
+    "axios": "^1.7.2",
+    "i18next": "^23.12.2",
+    "ldrs": "^1.0.2",
+    "markdown-to-jsx": "^7.4.7",
+    "prop-types": "^15.8.1",
+    "react": "^18.3.1",
+    "react-confetti": "^6.1.0",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^15.0.0",
+    "react-use": "^17.5.1"
+  },
+  "scripts": {
+    "watch": "webpack --watch"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.2",
+    "copy-webpack-plugin": "^12.0.2",
+    "html-loader": "^5.0.0",
+    "html-webpack-plugin": "^5.6.0",
+    "markdown-loader": "^8.0.0",
+    "react-router-dom": "^6.25.1",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
