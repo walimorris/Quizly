@@ -1,0 +1,5 @@
+# Mark Java files as Java
+*.java linguist-language=Java
+
+# Mark minified JS files as vendored to be ignored
+static/built/bundle.js linguist-vendored
