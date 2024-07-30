@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
           java-version: '17'
@@ -29,13 +29,13 @@ jobs:
         run: mvn clean package
 
       - name: Upload JAR artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: app-jar
           path: target/quizly-0.0.1-SNAPSHOT.jar
 
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: app-jar
           path: ./target
