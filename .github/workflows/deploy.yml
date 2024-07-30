@@ -53,6 +53,10 @@ jobs:
           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/ec2-key.pem
           chmod 600 ~/.ssh/ec2-key.pem
 
+      - name: Add EC2 host to known_hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
+
       - name: Deploy to EC2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
