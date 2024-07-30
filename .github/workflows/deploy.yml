@@ -1,0 +1,56 @@
+name: Deploy to EC2
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Which environment to deploy to'
+        required: true
+        default: 'development'
+      deploy_message:
+        description: 'Deployment message'
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-jar
+          path: target/quizly-0.0.1-SNAPSHOT.jar
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: app-jar
+          path: ./target
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/ec2-key.pem
+          chmod 600 ~/.ssh/ec2-key.pem
+
+      - name: Deploy to EC2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          EC2_JAR_PATH: ${{ secrets.EC2_JAR_PATH }}
+        run: |
+          scp -i ~/.ssh/ec2-key.pem target/quizly-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_IP }}:${{ secrets.EC2_JAR_PATH }}
+          ssh -i ~/.ssh/ec2-key.pem ec2-user@${{ secrets.EC2_IP }} 'sudo systemctl restart quizly'
