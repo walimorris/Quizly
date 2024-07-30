@@ -10,3 +10,9 @@ Quizly is an application that generates quizzes on the fly, on any domain or top
 - PDF and document creation
 - Sharable documents for fun with friends
 - Timed quiz mode to up your game
+- Supports multiple languages (English, Bulgarian)
+
+## Teaser
+
+![Teaser-1](https://quizly-test-deploy.s3.us-west-2.amazonaws.com/quizly-teaser-1.png)
+![Teaser-2](https://quizly-test-deploy.s3.us-west-2.amazonaws.com/quizly-teaser-2.png)
