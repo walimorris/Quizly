@@ -72,6 +72,19 @@ public class AuthController {
             // Note: getUserName() and getEmailAddress() are being interchanged. This is because quizly usernames
             // are indeed their emailAddress. You can see this below in the signup process.
             com.morris.quizly.models.security.UserDetails userDetails = (com.morris.quizly.models.security.UserDetails) authentication.getPrincipal();
+
+            // locked accounts should not be logged in
+            if (!userDetails.isAccountNonLocked()) {
+                LOGGER.info("User: {}", userDetails);
+                LOGGER.info("Account is locked.");
+                if (SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
+                    SecurityContextHolder.getContext().getAuthentication().setAuthenticated(false);
+                }
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(userDetails.getLockedReason());
+            }
+
             String token = jwtTokenProvider.createToken(userDetails.getUsername(), userDetails.getRoles());
             String refreshToken = jwtTokenProvider.createRefreshToken(request.getEmailAddress());
 

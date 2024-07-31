@@ -1,4 +1,4 @@
-package com.morris.quizly.models.ai;
+package com.morris.quizly.models.system;
 
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;

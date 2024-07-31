@@ -1,6 +1,6 @@
 package com.morris.quizly.services.impl;
 
-import com.morris.quizly.models.ai.SystemAi;
+import com.morris.quizly.models.system.SystemAi;
 import com.morris.quizly.models.locales.Language;
 import com.morris.quizly.models.security.ConfigurationComponent;
 import com.morris.quizly.services.OpenAiService;

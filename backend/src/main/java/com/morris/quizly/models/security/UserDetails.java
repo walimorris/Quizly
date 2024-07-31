@@ -3,10 +3,8 @@ package com.morris.quizly.models.security;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import com.morris.quizly.models.system.SystemFlag;
+import lombok.*;
 import org.bson.codecs.pojo.annotations.BsonId;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
@@ -21,6 +19,8 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 @ToString
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @Document("users")
 public class UserDetails implements org.springframework.security.core.userdetails.UserDetails {
@@ -42,6 +42,10 @@ public class UserDetails implements org.springframework.security.core.userdetail
     private boolean accountNonLocked;
     private boolean credentialsNonExpired;
     private boolean enabled;
+    private String lockedReason;
+
+    private int flagCount;
+    List<SystemFlag> flags;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

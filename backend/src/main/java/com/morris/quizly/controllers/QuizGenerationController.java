@@ -3,8 +3,12 @@ package com.morris.quizly.controllers;
 import com.morris.quizly.models.quiz.Quiz;
 import com.morris.quizly.models.quiz.QuizRequest;
 import com.morris.quizly.models.quiz.QuizlyQuestionGroup;
+import com.morris.quizly.models.system.Flag;
+import com.morris.quizly.models.system.FlagType;
+import com.morris.quizly.models.system.SystemFlag;
 import com.morris.quizly.services.OpenAiService;
 import com.morris.quizly.services.QuizlyDocumentService;
+import com.morris.quizly.services.SystemFlaggingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -29,11 +34,14 @@ public class QuizGenerationController {
 
     private final OpenAiService openAiService;
     private final QuizlyDocumentService quizlyDocumentService;
+    private final SystemFlaggingService systemFlaggingService;
 
     @Autowired
-    public QuizGenerationController(OpenAiService openAiService, QuizlyDocumentService quizlyDocumentService) {
+    public QuizGenerationController(OpenAiService openAiService, QuizlyDocumentService quizlyDocumentService,
+                                    SystemFlaggingService systemFlaggingService) {
         this.openAiService = openAiService;
         this.quizlyDocumentService = quizlyDocumentService;
+        this.systemFlaggingService = systemFlaggingService;
     }
 
     /**
@@ -54,13 +62,24 @@ public class QuizGenerationController {
                     .body(null);
         }
 
-        // This will begin the flagging process based on user, agent, application, etc.
-        // The flagging process is to track and handle unauthorized and/or malicious
-        // prompting activities.
+        // Flagging process begins
         if (response.equalsIgnoreCase(ACCESS_DENIED)) {
+            SystemFlag systemFlag = SystemFlag.builder()
+                    .flagType(FlagType.MALICIOUS_ACTIVITY)
+                    .timestamp(Instant.now())
+                    .build();
+            Flag accountFlag = systemFlaggingService.insertFlag(quizRequest.getUserId(), systemFlag);
+            LOGGER.info("Account flagged: {}, for user: {}", accountFlag, quizRequest.getUserId());
+
+            // return lock status to client to begin lock procedure
+            if (accountFlag.equals(Flag.FLAG_LOCK)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(accountFlag);
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(ACCESS_DENIED.toLowerCase());
+                    .body(ACCESS_DENIED.toLowerCase() + " " + accountFlag);
         }
         List<QuizlyQuestionGroup> quiz = quizlyDocumentService.generateQuizlyPDF(response,  quizRequest);
         if (!quiz.isEmpty()) {

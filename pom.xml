@@ -168,6 +168,13 @@
 			<artifactId>spring-cloud-aws-starter-secrets-manager</artifactId>
 		</dependency>
 
+		<!-- AWS Dependencies -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-sns</artifactId>
+			<version>1.12.765</version>
+		</dependency>
+
 		<!-- JSON Dependencies -->
 		<dependency>
 			<groupId>org.json</groupId>
