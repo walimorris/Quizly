@@ -43,6 +43,7 @@ public class UserDetails implements org.springframework.security.core.userdetail
     private boolean credentialsNonExpired;
     private boolean enabled;
     private String lockedReason;
+    private String signupToken;
 
     private int flagCount;
     List<SystemFlag> flags;

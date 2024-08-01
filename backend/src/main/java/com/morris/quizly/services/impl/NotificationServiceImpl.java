@@ -4,8 +4,7 @@ import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
-import com.amazonaws.services.sns.model.SubscribeRequest;
-import com.amazonaws.services.sns.model.SubscribeResult;
+import com.morris.quizly.models.security.UserDetails;
 import com.morris.quizly.services.EmailService;
 import com.morris.quizly.services.NotificationService;
 import org.slf4j.Logger;
@@ -20,11 +19,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Value("${sns.systemsFlaggingTopicArn}")
     private String snsSystemsFlaggingTopicArn;
 
-    @Value("${sns.applicationUserTopicArn}")
-    private String snsApplicationUserTopicArn;
-
     private final AmazonSNS amazonSNSClient;
     private final EmailService emailService;
+
+    private static final String DEV_CONFIRMATION_LINK = "http://localhost:8081/api/subscriptions/confirm-signup?token=";
 
     public NotificationServiceImpl(EmailService emailService) {
         this.amazonSNSClient = AmazonSNSClientBuilder.defaultClient();
@@ -39,20 +37,20 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public boolean subscribeUserToAppUserTopic(String userEmailAddress) {
+    public void sendSignupConfirmationEmailAndLink(UserDetails user, String token) {
         try {
-            SubscribeRequest subscribeRequest = new SubscribeRequest()
-                    .withTopicArn(snsApplicationUserTopicArn)
-                    .withProtocol("email")
-                    .withEndpoint(userEmailAddress);
-            SubscribeResult subscribeResult = amazonSNSClient.subscribe(subscribeRequest);
-            sendCustomConfirmationEmail(userEmailAddress, subscribeResult.getSubscriptionArn());
-            return true;
+            sendCustomConfirmationEmail(user, token);
         } catch (Exception e) {
-            LOGGER.error("Error subscribing user to Application User SNS Topic: {}", e.getMessage());
-            return false;
+            LOGGER.error("Error sending signup confirmation email: {}", e.getMessage());
         }
     }
 
-    private void sendCustomConfirmationEmail(String userEmail, String subscriptionArn) {}
+    private void sendCustomConfirmationEmail(UserDetails user, String token) {
+        String confirmationLink = DEV_CONFIRMATION_LINK + token;
+        String emailBody = String.format(
+                "Welcome to Quizly, %s! We're excited you've decided to join this educational journey with us.\n" +
+                        "Please confirm your subscription by clicking the link below:\n\n" + confirmationLink, user.getFirstName()
+        );
+        emailService.sendEmail(user.getEmailAddress(), "Quizly Signup Confirmation", emailBody);
+    }
 }

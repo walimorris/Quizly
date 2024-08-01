@@ -37,6 +37,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/subscriptions/**",
                                 "/api/quiz-generation/**",
                                 "/api/quiz-retrieval/**",
                                 "/login",

@@ -1,5 +1,7 @@
 package com.morris.quizly.services;
 
+import com.morris.quizly.models.security.UserDetails;
+
 public interface NotificationService {
 
     /**
@@ -11,5 +13,11 @@ public interface NotificationService {
      */
     boolean notifyAdmin(String message);
 
-    boolean subscribeUserToAppUserTopic(String userEmailAddress);
+    /**
+     * Sends signup confirmation email to user.
+     *
+     * @param user  {@link UserDetails}
+     * @param token {@link String} confirmation token
+     */
+    void sendSignupConfirmationEmailAndLink(UserDetails user, String token);
 }

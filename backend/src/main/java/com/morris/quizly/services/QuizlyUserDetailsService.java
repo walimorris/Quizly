@@ -33,4 +33,20 @@ public interface QuizlyUserDetailsService extends UserDetailsService {
      * @return boolean
      */
     boolean isUserNameInUse(String username);
+
+    /**
+     * Find user by signup token.
+     *
+     * @param token {@link String} signup token
+     * @return {@link UserDetails}
+     */
+    UserDetails findBySignupToken(String token);
+
+    /**
+     * Modifies user enabled status.
+     *
+     * @param user {@link UserDetails} user
+     * @param enabled boolean
+     */
+    void updateEnabledStatus(UserDetails user, boolean enabled);
 }

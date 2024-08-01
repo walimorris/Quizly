@@ -1,9 +1,7 @@
 package com.morris.quizly.controllers;
 
-import com.morris.quizly.models.security.AuthRequest;
-import com.morris.quizly.models.security.JwtTokenProvider;
-import com.morris.quizly.models.security.Roles;
-import com.morris.quizly.models.security.SignupRequest;
+import com.morris.quizly.models.security.*;
+import com.morris.quizly.services.NotificationService;
 import com.morris.quizly.services.QuizlyUserDetailsService;
 import com.morris.quizly.utils.FileUtil;
 import org.slf4j.Logger;
@@ -17,7 +15,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,6 +33,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final QuizlyUserDetailsService quizlyUserDetailsService;
+    private final NotificationService notificationService;
 
     private static final String USER_DETAILS = "userDetails";
     private static final String ACCESS_TOKEN = "accessToken";
@@ -53,11 +52,13 @@ public class AuthController {
 
     @Autowired
     public AuthController(AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder,
-                          JwtTokenProvider jwtTokenProvider, QuizlyUserDetailsService quizlyDetailsService) {
+                          JwtTokenProvider jwtTokenProvider, QuizlyUserDetailsService quizlyDetailsService,
+                          NotificationService notificationService) {
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.quizlyUserDetailsService = quizlyDetailsService;
+        this.notificationService = notificationService;
     }
 
     @PostMapping("/login")
@@ -168,6 +169,7 @@ public class AuthController {
             LOGGER.error("Image is null: {}", e.getMessage());
         }
         LOGGER.info(imageBase64EncodedStr);
+        String signupToken = UUID.randomUUID().toString(); // make this secure
         com.morris.quizly.models.security.UserDetails userDetails = com.morris.quizly.models.security.UserDetails.builder()
                 .firstName(signupRequest.getFirstName())
                 .lastName(signupRequest.getLastName())
@@ -179,12 +181,14 @@ public class AuthController {
                 .accountNonLocked(true)
                 .accountNonExpired(true)
                 .credentialsNonExpired(true)
-                .enabled(true)
+                .enabled(false)
+                .signupToken(signupToken)
                 .build();
 
         try {
             UserDetails userDetailsResult = quizlyUserDetailsService.save(userDetails);
-            if (userDetailsResult.isEnabled()) {
+            if (userDetailsResult.isAccountNonLocked()) {
+                notificationService.sendSignupConfirmationEmailAndLink(userDetailsResult, signupToken);
                 return ResponseEntity.ok()
                         .body(SIGNUP_SUCCESS);
             }

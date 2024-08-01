@@ -21,6 +21,15 @@ public interface UserRepository extends MongoRepository<UserDetails, String> {
     Optional<UserDetails> findByUsername(String username);
 
     /**
+     * Find user by signup token. Signup tokens are used to confirm application subscriptions.
+     *
+     * @param token {@link String} signup token
+     *
+     * @return {@link UserDetails}
+     */
+    Optional<UserDetails> findBySignupToken(String token);
+
+    /**
      * Determines if an account is non-locked.
      *
      * @param userId {@link String} userId
