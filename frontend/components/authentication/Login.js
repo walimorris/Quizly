@@ -65,12 +65,11 @@ export default function Login() {
             localStorage.setItem('accessToken', accessToken);
             localStorage.setItem('refreshToken', refreshToken);
             localStorage.setItem('userDetails', JSON.stringify(userDetails));
-
-            // Redirect to dashboard
             form.reset();
             window.location.href = "/dashboard";
         }).catch(error => {
-            setError(t('invalid email or password'));
+            form.reset();
+            setError(t(error.response?.data.error));
             console.error('Login Error: ', error.response?.data || error.message);
         });
     };

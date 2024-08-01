@@ -21,7 +21,7 @@
   "remember me": "Remember me",
   "forgot password": "Forgot password?",
   "don't have an account? sign up": "Don't have an account? Sign Up",
-  "invalid email or password": "Invalid email or password",
+  "Invalid email or password": "Invalid email or password",
   "copyright": "Copyright",
   "first name": "First Name",
   "last name": "Last Name",
@@ -52,5 +52,9 @@
   "cancel": "Cancel",
   "update": "Update",
   "make-quizly-better": "Tell us what we can do to make Quizly better!",
-  "no-user-updates": "There were no updates on user details!"
+  "no-user-updates": "There were no updates on user details!",
+  "User account is locked": "User account is locked",
+  "Bad credentials": "Bad credentials",
+  "User account has expired": "User account has expired",
+  "User is disabled": "User is disabled"
 }

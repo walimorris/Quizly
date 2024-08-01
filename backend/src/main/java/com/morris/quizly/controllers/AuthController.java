@@ -44,7 +44,6 @@ public class AuthController {
     private static final String ERROR_UNKNOWN = "Unknown error";
     private static final String ERROR_REFRESH_TOKEN = "Invalid refresh token";
     private static final String ERROR_JWT_TOKEN = "Invalid or expired jwt token";
-    private static final String ERROR_LOGIN = "Invalid username or password";
     private static final String ERROR_SIGNUP = "Failed signup";
     private static final String USERNAME_IN_USE = "Email address is already in use.";
     private static final String MISSING_REFRESH_TOKEN = "Missing refresh token";
@@ -64,6 +63,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@ModelAttribute AuthRequest request) {
         try {
+            // Note: Springboot reads the properties on the user object: accountNonExpired, accountNonLocked, CredentialsNonExpired
+            // and will not authenticate users if these properties are not in the correct state and instead will return values such
+            // as 'Bad credentials', 'User Account is locked' etc
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmailAddress(), request.getPassword())
             );
@@ -72,19 +74,6 @@ public class AuthController {
             // Note: getUserName() and getEmailAddress() are being interchanged. This is because quizly usernames
             // are indeed their emailAddress. You can see this below in the signup process.
             com.morris.quizly.models.security.UserDetails userDetails = (com.morris.quizly.models.security.UserDetails) authentication.getPrincipal();
-
-            // locked accounts should not be logged in
-            if (!userDetails.isAccountNonLocked()) {
-                LOGGER.info("User: {}", userDetails);
-                LOGGER.info("Account is locked.");
-                if (SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
-                    SecurityContextHolder.getContext().getAuthentication().setAuthenticated(false);
-                }
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(userDetails.getLockedReason());
-            }
-
             String token = jwtTokenProvider.createToken(userDetails.getUsername(), userDetails.getRoles());
             String refreshToken = jwtTokenProvider.createRefreshToken(request.getEmailAddress());
 
@@ -98,7 +87,7 @@ public class AuthController {
         } catch (AuthenticationException e) {
             LOGGER.info("ERROR: {}", e.getMessage());
             Map<String, Object> errorResponse = Map.of(
-                    ERROR, ERROR_LOGIN
+                    ERROR, e.getMessage()
             );
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .contentType(MediaType.APPLICATION_JSON)

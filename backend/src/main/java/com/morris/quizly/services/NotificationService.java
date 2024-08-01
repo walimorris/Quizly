@@ -10,4 +10,6 @@ public interface NotificationService {
      * @return boolean - message was sent
      */
     boolean notifyAdmin(String message);
+
+    boolean subscribeUserToAppUserTopic(String userEmailAddress);
 }

@@ -21,7 +21,7 @@
   "remember me": "Запомни ме",
   "forgot password": "Забравена парола?",
   "don't have an account? sign up": "Нямате акаунт? Регистрирайте се",
-  "invalid email or password": "Невалиден имейл или парола",
+  "Invalid email or password": "Невалиден имейл или парола",
   "copyright": "Авторско право",
   "first name": "Първо име",
   "last name": "Фамилия",
@@ -52,5 +52,9 @@
   "cancel": "Отказ",
   "update": "Изпрати",
   "make-quizly-better": "Кажете ни как можем да направим Quizly по-добър!",
-  "no-user-updates": "Няма промени в потребителските данни!"
+  "no-user-updates": "Няма промени в потребителските данни!",
+  "User account is locked": "Акаунтът на потребителя е заключен",
+  "Bad credentials": "Невалидни удостоверения",
+  "User account has expired": "Акаунтът на потребителя е изтекъл",
+  "User is disabled": "Потребителят е деактивиран"
 }

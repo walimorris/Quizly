@@ -87,15 +87,16 @@ const Dashboard = ({ changeLanguage }) => {
             setLockedAnswers(false);
             setCorrectAnswers({});
         } catch (error) {
-            console.error('Error generating quiz:', error);
-            if (error.response && error.response.data.includes("access denied")) {
-                setErrorMessage('access_denied');
-                setNumberOfQuestions('');
-                setPrompt('');
-                setQuizTitle('');
-            } else if (error.response && error.response.data === "FLAG_LOCK") {
-                // logout
-                handleLogout();
+            console.error('Error generating quiz:', error.response.data);
+            if (error.response) {
+                if (error.response.data.includes("FLAG_LOCK") || error.response.data.includes("flag_lock"))  {
+                    handleLogout();
+                } else {
+                    setErrorMessage(t('access_denied'));
+                    setNumberOfQuestions('');
+                    setPrompt('');
+                    setQuizTitle('');
+                }
             }
         } finally {
             setShowCradle(false);
