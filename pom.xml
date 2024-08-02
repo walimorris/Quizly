@@ -141,6 +141,11 @@
 			<artifactId>spring-boot-starter-data-mongodb</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongodb-driver-sync</artifactId>
+			<version>5.1.2</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
@@ -226,7 +231,7 @@
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-mongodb-atlas</artifactId>
-			<version>0.31.0</version>
+			<version>0.33.0</version>
 		</dependency>
 		<dependency>
 			<groupId>dev.langchain4j</groupId>

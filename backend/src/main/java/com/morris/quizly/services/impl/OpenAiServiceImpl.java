@@ -1,15 +1,19 @@
 package com.morris.quizly.services.impl;
 
-import com.morris.quizly.models.system.SystemAi;
+import com.mongodb.client.MongoClient;
 import com.morris.quizly.models.locales.Language;
 import com.morris.quizly.models.security.ConfigurationComponent;
+import com.morris.quizly.models.system.SystemAi;
 import com.morris.quizly.services.OpenAiService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModelName;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.embedding.mongodb.MongoDbEmbeddingStore;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
@@ -32,10 +36,12 @@ public class OpenAiServiceImpl implements OpenAiService {
     private static final String UNSUCCESSFUL = "Unsuccessful";
 
     private final ConfigurationComponent configurationComponent;
+    private final MongoClient mongoClient;
 
     @Autowired
-    public OpenAiServiceImpl(ConfigurationComponent configurationComponent) {
+    public OpenAiServiceImpl(ConfigurationComponent configurationComponent, MongoClient mongoClient) {
         this.configurationComponent = configurationComponent;
+        this.mongoClient = mongoClient;
     }
 
     @Override
@@ -89,5 +95,28 @@ public class OpenAiServiceImpl implements OpenAiService {
         }
         LOGGER.warn("No text extracted from PDF content.");
         return new ArrayList<>();
+    }
+
+    @Override
+    public ContentRetriever getOpenAiQuizContentRetriever() {
+        EmbeddingModel embeddingModel = new OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder()
+                .modelName(OpenAiEmbeddingModelName.TEXT_EMBEDDING_ADA_002)
+                .apiKey(configurationComponent.getOpenAiApiKey())
+                .maxRetries(2)
+                .build();
+
+        MongoDbEmbeddingStore embeddingStore = MongoDbEmbeddingStore.builder()
+                .fromClient(mongoClient)
+                .databaseName(configurationComponent.getMongoDatabase())
+                .collectionName(configurationComponent.getQuizCollection())
+                .indexName(configurationComponent.getQuizVectorIndex())
+                .build();
+
+        return EmbeddingStoreContentRetriever.builder()
+                .embeddingStore(embeddingStore)
+                .embeddingModel(embeddingModel)
+                .maxResults(10)
+                .minScore(0.5)
+                .build();
     }
 }

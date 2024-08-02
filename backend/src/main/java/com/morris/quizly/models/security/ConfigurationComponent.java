@@ -20,6 +20,12 @@ public class ConfigurationComponent {
     @Value("${spring.data.mongodb.database}")
     private String mongoDatabase;
 
+    @Value("${data.mongodb.quiz.collection}")
+    private String quizCollection;
+
+    @Value("${data.mongodb.quiz.vector.index}")
+    private String quizVectorIndex;
+
     @Value("${security.jwt.token.secret-key}")
     private String jwtSecretKey;
 
