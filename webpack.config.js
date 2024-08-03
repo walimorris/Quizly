@@ -6,7 +6,7 @@ const { resolve } = require("@babel/core/lib/vendor/import-meta-resolve");
 module.exports = {
     mode: 'development',
     devtool: 'inline-source-map',
-    entry: path.resolve(__dirname, './frontend/src/index.js'), // Entry point of your React application
+    entry: path.resolve(__dirname, './frontend/src/index.js'), // Entry point
     output: {
         path: path.resolve(__dirname, './frontend/static/built'), // Output directory
         filename: 'bundle.js', // Output bundle filename
