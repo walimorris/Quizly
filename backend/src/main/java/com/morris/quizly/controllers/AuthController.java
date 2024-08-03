@@ -1,12 +1,15 @@
 package com.morris.quizly.controllers;
 
+import com.google.cloud.recaptchaenterprise.v1.RecaptchaEnterpriseServiceClient;
 import com.morris.quizly.models.security.*;
 import com.morris.quizly.services.NotificationService;
 import com.morris.quizly.services.QuizlyUserDetailsService;
+import com.morris.quizly.services.RecaptchaService;
 import com.morris.quizly.utils.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +21,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +39,7 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final QuizlyUserDetailsService quizlyUserDetailsService;
     private final NotificationService notificationService;
+    private final RecaptchaService recaptchaService;
 
     private static final String USER_DETAILS = "userDetails";
     private static final String ACCESS_TOKEN = "accessToken";
@@ -50,15 +56,18 @@ public class AuthController {
     private static final String SIGNUP_SUCCESS = "Signup Successful";
 
 
+
+
     @Autowired
     public AuthController(AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder,
                           JwtTokenProvider jwtTokenProvider, QuizlyUserDetailsService quizlyDetailsService,
-                          NotificationService notificationService) {
+                          NotificationService notificationService, RecaptchaService recaptchaService) {
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.quizlyUserDetailsService = quizlyDetailsService;
         this.notificationService = notificationService;
+        this.recaptchaService = recaptchaService;
     }
 
     @PostMapping("/login")
@@ -199,5 +208,11 @@ public class AuthController {
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ERROR_UNKNOWN);
+    }
+
+    @PostMapping("/password-reset/verify-recaptcha")
+    public ResponseEntity<String> verifyRecaptcha(@RequestBody RecaptchaRequest request) {
+        String result = recaptchaService.createAssessment(request.getToken(), "password_reset");
+        return ResponseEntity.ok(result);
     }
 }

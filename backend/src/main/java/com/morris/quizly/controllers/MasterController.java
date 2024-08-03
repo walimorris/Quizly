@@ -20,7 +20,15 @@ public class MasterController {
      *
      * @return forwarding route to index.html
      */
-    @RequestMapping(value = {"/", "/login", "/signup", "/dashboard", "/documents", "/blog"})
+    @RequestMapping(value = {
+            "/",
+            "/login",
+            "/signup",
+            "/forgot-password",
+            "/dashboard",
+            "/documents",
+            "/blog"
+    })
     public String forward() {
         return "forward:/built/index.html";
     }

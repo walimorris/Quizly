@@ -1,5 +1,6 @@
 package com.morris.quizly.configurations;
 
+import com.google.cloud.recaptchaenterprise.v1.RecaptchaEnterpriseServiceClient;
 import com.morris.quizly.models.security.JwtTokenFilter;
 import com.morris.quizly.services.QuizlyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -46,6 +49,7 @@ public class SecurityConfiguration {
                                 "/documents",
                                 "/blog",
                                 "/signup",
+                                "/forgot-password",
                                 "/images/**",
                                 "/built/bundle.js"
                         ).permitAll() // Permit access to specific URLs
@@ -80,5 +84,10 @@ public class SecurityConfiguration {
         AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
         authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
         return authenticationManagerBuilder.build();
+    }
+
+    @Bean
+    public RecaptchaEnterpriseServiceClient recaptchaEnterpriseServiceClient() throws IOException {
+        return RecaptchaEnterpriseServiceClient.create();
     }
 }

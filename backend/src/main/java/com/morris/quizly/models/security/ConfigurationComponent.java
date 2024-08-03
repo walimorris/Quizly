@@ -34,4 +34,13 @@ public class ConfigurationComponent {
 
     @Value("${openai.api.key}")
     private String openAiApiKey;
+
+    @Value("${recaptcha.site-key}")
+    private String recaptchaSiteKey;
+
+    @Value("${recaptcha.secret-key}")
+    private String recaptchaSecret;
+
+    @Value("${recaptcha.project-id}")
+    private String recaptchaProjectId;
 }

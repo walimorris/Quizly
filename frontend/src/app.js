@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from '../components/authentication/Login';
 import Signup from '../components/authentication/Signup';
+import ForgotPassword from "../components/authentication/ForgotPassword";
 import Dashboard from '../components/Dashboard';
 import PrivateRoute from '../components/authentication/PrivateRoute';
 import { validateToken } from '../utils/auth';
@@ -52,6 +53,7 @@ const App = () => {
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/dashboard" element={
                         <PrivateRoute>
                             <Dashboard />
