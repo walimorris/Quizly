@@ -20,6 +20,7 @@
   "password": "Password",
   "remember me": "Remember me",
   "forgot password": "Forgot password?",
+  "forgot_password_page": "Forgot Password",
   "don't have an account? sign up": "Don't have an account? Sign Up",
   "Invalid email or password": "Invalid email or password",
   "copyright": "Copyright",
@@ -56,5 +57,8 @@
   "User account is locked": "User account is locked",
   "Bad credentials": "Bad credentials",
   "User account has expired": "User account has expired",
-  "User is disabled": "User is disabled"
+  "User is disabled": "User is disabled",
+  "verify_recaptcha": "Verify reCAPTCHA",
+  "send_password_reset_email": "Send Email",
+  "remember_password_?_signin": "Remember your password? Sign in"
 }

@@ -20,6 +20,7 @@
   "password": "Парола",
   "remember me": "Запомни ме",
   "forgot password": "Забравена парола?",
+  "forgot_password_page": "Забравена парола",
   "don't have an account? sign up": "Нямате акаунт? Регистрирайте се",
   "Invalid email or password": "Невалиден имейл или парола",
   "copyright": "Авторско право",
@@ -56,5 +57,8 @@
   "User account is locked": "Акаунтът на потребителя е заключен",
   "Bad credentials": "Невалидни удостоверения",
   "User account has expired": "Акаунтът на потребителя е изтекъл",
-  "User is disabled": "Потребителят е деактивиран"
+  "User is disabled": "Потребителят е деактивиран",
+  "verify_recaptcha": "Потвърдете reCAPTCHA",
+  "send_password_reset_email": "Изпратете имейл",
+  "remember_password_?_signin": "Помните ли паролата си? Вход"
 }

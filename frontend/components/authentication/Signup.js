@@ -19,7 +19,7 @@ import Footer from "../Footer";
 const defaultTheme = createTheme({
     palette: {
         background: {
-            default: "#f8f8f8" // off-white with a slight gray tint
+            default: "#f8f8f8"
         }
     }
 });
