@@ -32,8 +32,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Set up Google Cloud credentials
-        run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > gcloud-key.json
+      - name: Decode Google Cloud credentials
+        run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" | base64 --decode > gcloud-key.json
 
       - name: Set GOOGLE_APPLICATION_CREDENTIALS environment variable
         run: echo "GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcloud-key.json" >> $GITHUB_ENV
