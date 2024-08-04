@@ -32,7 +32,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Set up Google Cloud credentials
+        run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > gcloud-key.json
+
+      - name: Set GOOGLE_APPLICATION_CREDENTIALS environment variable
+        run: echo "GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/gcloud-key.json" >> $GITHUB_ENV
+
       - name: Build with Maven
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
         run: mvn clean package
 
       - name: Upload JAR artifact
