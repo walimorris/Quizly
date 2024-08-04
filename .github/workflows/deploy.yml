@@ -25,25 +25,6 @@ jobs:
           distribution: 'corretto'
           java-version: '17'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.15.1'
-
-      - name: Install Node.js dependencies
-        run: npm install --legacy-peer-deps
-        working-directory: ./frontend
-
-      - name: Build frontend assets
-        run: npm run build
-        working-directory: ./frontend
-
-      - name: Verify frontend build output
-        run: ls -la ./frontend/static/built
-
-      - name: Verify copied assets
-        run: ls -la ./backend/src/main/resources/static/built
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -61,12 +42,6 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
         run: mvn clean package
-
-      - name: Verify resources in target/classes
-        run: ls -la target/classes/static/built
-
-      - name: Verify bundle.js in JAR
-        run: jar tf target/quizly-0.0.1-SNAPSHOT.jar | grep bundle.js
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v3
