@@ -49,7 +49,8 @@ module.exports = {
         }),
         new CopyPlugin({
             patterns: [
-                { from: path.resolve(__dirname, './frontend/static/built'), to: path.resolve(__dirname, './backend/src/main/resources/static/built') },
+                { from: path.resolve(__dirname, './frontend/static/built/index.html'), to: path.resolve(__dirname, './backend/src/main/resources/static/built/index.html') },
+                { from: path.resolve(__dirname, './frontend/static/built/bundle.js'), to: path.resolve(__dirname, './backend/src/main/resources/static/built/bundle.js') },
             ],
         }),
     ],
