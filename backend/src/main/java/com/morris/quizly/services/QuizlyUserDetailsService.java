@@ -46,6 +46,15 @@ public interface QuizlyUserDetailsService extends UserDetailsService {
     UserDetails findBySignupToken(String token);
 
     /**
+     * Encodes and reset user password. Does not update any other fields in
+     * the document.
+     *
+     * @param user     {@link UserDetails}
+     * @param password {@link String} password
+     */
+    void updateAndSetEncodedPassword(UserDetails user, String password);
+
+    /**
      * Find by password reset token.
      *
      * @param token {@link String} reset token

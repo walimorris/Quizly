@@ -58,12 +58,20 @@ public class QuizlyUserDetailsServiceImpl implements QuizlyUserDetailsService {
     }
 
     @Override
+    public void updateAndSetEncodedPassword(UserDetails user, String password) {
+        Query query = new Query(Criteria.where("username").is(user.getUsername()));
+        Update update = new Update().set("password", password);
+        mongoTemplate.updateFirst(query, update, UserDetails.class);
+    }
+
+    @Override
     public void updateEnabledStatus(UserDetails user, boolean enabled) {
         Query query = new Query(Criteria.where("_id").is(user.getId()));
         Update update = new Update().set("enabled", enabled);
         mongoTemplate.updateFirst(query, update, UserDetails.class);
     }
 
+    @Override
     public void updateAndRemovePasswordResetToken(String token) {
         Query query = new Query(Criteria.where("passwordResetToken").is(token));
         Update update = new Update().unset("passwordResetToken");

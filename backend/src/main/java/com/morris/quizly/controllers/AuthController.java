@@ -25,17 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+// TODO: I need to refactor much of this logic into a AuthService. This will help decoupling
+// TODO: much logic and possible circular dependency
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthenticationManager authenticationManager;
-    private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final QuizlyUserDetailsService quizlyUserDetailsService;
     private final NotificationService notificationService;
     private final RecaptchaService recaptchaService;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String USER_DETAILS = "userDetails";
     private static final String ACCESS_TOKEN = "accessToken";
@@ -55,15 +57,15 @@ public class AuthController {
     private static final String SUCCESS = "success";
 
     @Autowired
-    public AuthController(AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder,
-                          JwtTokenProvider jwtTokenProvider, QuizlyUserDetailsService quizlyDetailsService,
-                          NotificationService notificationService, RecaptchaService recaptchaService) {
+    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider,
+                          QuizlyUserDetailsService quizlyDetailsService, RecaptchaService recaptchaService,
+                          NotificationService notificationService, PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
-        this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.quizlyUserDetailsService = quizlyDetailsService;
         this.notificationService = notificationService;
         this.recaptchaService = recaptchaService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
@@ -224,8 +226,8 @@ public class AuthController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/password-reset/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody PasswordResetRequest request) {
+    @PostMapping("/password-reset/reset-password-request")
+    public ResponseEntity<String> resetPasswordRequest(@RequestBody PasswordResetRequest request) {
         try {
             UserDetails userDetails = quizlyUserDetailsService.loadUserByUsername(request.getEmailAddress());
             if (null != userDetails) {
@@ -233,14 +235,41 @@ public class AuthController {
                     String token = UUID.randomUUID().toString();
                     quizlyUserDetailsService.updateAndSetPasswordResetToken(userDetails, token);
                     notificationService.sendPasswordResetEmailAndLink(userDetails, token);
+                    return ResponseEntity.ok(SUCCESS);
                 }
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(INVALID_USER_NAME);
             }
-            return ResponseEntity.ok(SUCCESS);
         } catch (Exception e) {
             LOGGER.error("Error sending password reset request: {}", e.getMessage());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(PASSWORD_RESET_ERROR);
+    }
+
+    @PostMapping("/password-reset/change-password")
+    public ResponseEntity<String> resetAndChangePassword(@RequestBody PasswordChangeRequest passwordChangeRequest) {
+        if (!passwordChangeRequest.getPassword().equals(passwordChangeRequest.getConfirmPassword())) {
+            LOGGER.error("Passwords do not match!");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Passwords do not match.");
+        }
+        LOGGER.info("Moving into password change process.");
+        try {
+            String username = jwtTokenProvider.getUsername(passwordChangeRequest.getToken());
+            LOGGER.info("User: {}, requesting password change", username);
+            UserDetails userDetails = quizlyUserDetailsService.loadUserByUsername(username);
+            if (null != userDetails) {
+                quizlyUserDetailsService.updateAndSetEncodedPassword(
+                        userDetails,
+                        passwordEncoder.encode(passwordChangeRequest.getPassword())
+                );
+                return ResponseEntity.ok(SUCCESS);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Cannot change password");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error resetting password: {}", e.getMessage());
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(PASSWORD_RESET_ERROR);
     }

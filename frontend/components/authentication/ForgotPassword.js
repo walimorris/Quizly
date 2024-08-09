@@ -76,7 +76,7 @@ export default function ForgotPassword() {
             // Implement the logic to send a password reset email here.
             console.log('Password reset email sent to:', email);
             try {
-                const response = await fetch('/api/auth/password-reset/reset-password', {
+                const response = await fetch('/api/auth/password-reset/reset-password-request', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

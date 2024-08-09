@@ -59,7 +59,7 @@ public class JwtTokenProvider {
         claims.put("roles", "USER");
 
         Date now = new Date();
-        Date validity = new Date(now.getTime() + 10000);
+        Date validity = new Date(now.getTime() + 300000);
 
         return Jwts.builder()
                 .setClaims(claims)
