@@ -23,6 +23,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final EmailService emailService;
 
     private static final String DEV_CONFIRMATION_LINK = "http://localhost:8081/api/subscriptions/confirm-signup?token=";
+    private static final String DEV_PASSWORD_RESET_LINK = "http://localhost:8081/api/subscriptions/password-reset?token=";
 
     public NotificationServiceImpl(EmailService emailService) {
         this.amazonSNSClient = AmazonSNSClientBuilder.defaultClient();
@@ -43,6 +44,25 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (Exception e) {
             LOGGER.error("Error sending signup confirmation email: {}", e.getMessage());
         }
+    }
+
+    @Override
+    public void sendPasswordResetEmailAndLink(UserDetails user, String token) {
+        try {
+            sendCustomPasswordResetEmail(user, token);
+        } catch (Exception e) {
+            LOGGER.error("Error sending signup confirmation email: {}", e.getMessage());
+        }
+    }
+
+    private void sendCustomPasswordResetEmail(UserDetails user, String token) {
+        String passwordResetLink = DEV_PASSWORD_RESET_LINK + token;
+        String emailBody = String.format(
+                "Hi, " + user.getFirstName() + ", we've received a notification for password reset on your Quizly account.\n" +
+                        "Please use the below link to continue this process. If you've not requested this reset process, email " +
+                        "our team at ai.quizly@gmail.com to report.\n\n" + passwordResetLink
+        );
+        emailService.sendEmail(user.getEmailAddress(), "Quizly Password Reset Request", emailBody);
     }
 
     private void sendCustomConfirmationEmail(UserDetails user, String token) {

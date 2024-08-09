@@ -13,6 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +45,8 @@ public class UserDetails implements org.springframework.security.core.userdetail
     private boolean enabled;
     private String lockedReason;
     private String signupToken;
+    private String passwordResetToken;
+    private Date passwordResetTokenExpiry;
 
     private int flagCount;
     List<SystemFlag> flags;

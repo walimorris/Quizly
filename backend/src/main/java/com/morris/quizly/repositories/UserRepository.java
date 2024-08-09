@@ -30,6 +30,15 @@ public interface UserRepository extends MongoRepository<UserDetails, String> {
     Optional<UserDetails> findBySignupToken(String token);
 
     /**
+     * Find user by password reset token. Password tokens expire.
+     *
+     * @param token {@link String} password reset token
+     *
+     * @return {@link UserDetails}
+     */
+    Optional<UserDetails> findByPasswordResetToken(String token);
+
+    /**
      * Determines if an account is non-locked.
      *
      * @param userId {@link String} userId

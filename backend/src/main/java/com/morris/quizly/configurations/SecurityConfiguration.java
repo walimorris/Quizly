@@ -50,6 +50,7 @@ public class SecurityConfiguration {
                                 "/blog",
                                 "/signup",
                                 "/forgot-password",
+                                "/reset-password",
                                 "/images/**",
                                 "/built/bundle.js"
                         ).permitAll() // Permit access to specific URLs

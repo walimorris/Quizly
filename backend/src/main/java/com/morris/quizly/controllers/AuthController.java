@@ -1,6 +1,5 @@
 package com.morris.quizly.controllers;
 
-import com.google.cloud.recaptchaenterprise.v1.RecaptchaEnterpriseServiceClient;
 import com.morris.quizly.models.security.*;
 import com.morris.quizly.services.NotificationService;
 import com.morris.quizly.services.QuizlyUserDetailsService;
@@ -9,7 +8,6 @@ import com.morris.quizly.utils.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,13 +46,13 @@ public class AuthController {
     private static final String ERROR_REFRESH_TOKEN = "Invalid refresh token";
     private static final String ERROR_JWT_TOKEN = "Invalid or expired jwt token";
     private static final String ERROR_SIGNUP = "Failed signup";
+    private static final String PASSWORD_RESET_ERROR = "Password reset unauthorized";
     private static final String USERNAME_IN_USE = "Email address is already in use.";
+    private static final String INVALID_USER_NAME = "Invalid user or email address";
     private static final String MISSING_REFRESH_TOKEN = "Missing refresh token";
 
     private static final String SIGNUP_SUCCESS = "Signup Successful";
-
-
-
+    private static final String SUCCESS = "success";
 
     @Autowired
     public AuthController(AuthenticationManager authenticationManager, PasswordEncoder passwordEncoder,
@@ -163,6 +159,19 @@ public class AuthController {
                 .body(errorResponse);
     }
 
+    @GetMapping("/validate-onetime-session-token")
+    public ResponseEntity<UserDetails> validateSessionToken(@RequestParam("token") String token) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String username = jwtTokenProvider.getUsername(token);
+        UserDetails user = quizlyUserDetailsService.loadUserByUsername(username);
+        if (null == user) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(user);
+    }
+
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@ModelAttribute SignupRequest signupRequest) {
         // check username availability
@@ -170,7 +179,6 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(USERNAME_IN_USE);
         }
-
         String imageBase64EncodedStr = null;
         try {
             imageBase64EncodedStr = FileUtil.base64partEncodedStr(signupRequest.getImage());
@@ -214,5 +222,26 @@ public class AuthController {
     public ResponseEntity<String> verifyRecaptcha(@RequestBody RecaptchaRequest request) {
         String result = recaptchaService.createAssessment(request.getToken(), "password_reset");
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/password-reset/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody PasswordResetRequest request) {
+        try {
+            UserDetails userDetails = quizlyUserDetailsService.loadUserByUsername(request.getEmailAddress());
+            if (null != userDetails) {
+                if (userDetails.isAccountNonLocked()) {
+                    String token = UUID.randomUUID().toString();
+                    quizlyUserDetailsService.updateAndSetPasswordResetToken(userDetails, token);
+                    notificationService.sendPasswordResetEmailAndLink(userDetails, token);
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(INVALID_USER_NAME);
+            }
+            return ResponseEntity.ok(SUCCESS);
+        } catch (Exception e) {
+            LOGGER.error("Error sending password reset request: {}", e.getMessage());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(PASSWORD_RESET_ERROR);
     }
 }

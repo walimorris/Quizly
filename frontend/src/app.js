@@ -12,6 +12,7 @@ import i18n from "./i18n";
 import Blog from "../components/blog/Blog";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import ResetPassword from "../components/authentication/ResetPassword";
 
 const App = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -54,6 +55,7 @@ const App = () => {
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/dashboard" element={
                         <PrivateRoute>
                             <Dashboard />

@@ -22,6 +22,7 @@ public interface QuizlyUserDetailsService extends UserDetailsService {
      * Save and persist user.
      *
      * @param userDetails {@link UserDetails}
+     *
      * @return {@link UserDetails}
      */
     UserDetails save(UserDetails userDetails);
@@ -30,6 +31,7 @@ public interface QuizlyUserDetailsService extends UserDetailsService {
      * Check if username is available.
      *
      * @param username {@link String} username
+     *
      * @return boolean
      */
     boolean isUserNameInUse(String username);
@@ -38,9 +40,19 @@ public interface QuizlyUserDetailsService extends UserDetailsService {
      * Find user by signup token.
      *
      * @param token {@link String} signup token
+     *
      * @return {@link UserDetails}
      */
     UserDetails findBySignupToken(String token);
+
+    /**
+     * Find by password reset token.
+     *
+     * @param token {@link String} reset token
+     *
+     * @return {@link UserDetails}
+     */
+    UserDetails findByPasswordResetToken(String token);
 
     /**
      * Modifies user enabled status.
@@ -49,4 +61,19 @@ public interface QuizlyUserDetailsService extends UserDetailsService {
      * @param enabled boolean
      */
     void updateEnabledStatus(UserDetails user, boolean enabled);
+
+    /**
+     * Modifies user password reset token.
+     *
+     * @param user {@link UserDetails} user
+     * @param token {@link String} token
+     */
+    void updateAndSetPasswordResetToken(UserDetails user, String token);
+
+    /**
+     * Modifies and removes user password reset token and expiry TTL.
+     *
+     * @param token {@link String} password reset token
+     */
+    void updateAndRemovePasswordResetToken(String token);
 }

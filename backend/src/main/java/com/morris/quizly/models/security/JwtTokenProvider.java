@@ -54,6 +54,21 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String createOneTimeUseSessionToken(String username) {
+        Claims claims = Jwts.claims().setSubject(username);
+        claims.put("roles", "USER");
+
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + 10000);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public String createRefreshToken(String username) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + refreshInMilliseconds);

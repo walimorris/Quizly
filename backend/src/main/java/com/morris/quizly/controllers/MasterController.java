@@ -27,7 +27,8 @@ public class MasterController {
             "/forgot-password",
             "/dashboard",
             "/documents",
-            "/blog"
+            "/blog",
+            "/reset-password"
     })
     public String forward() {
         return "forward:/built/index.html";
