@@ -1,6 +1,7 @@
 package com.morris.quizly.controllers;
 
 import com.morris.quizly.models.security.*;
+import com.morris.quizly.services.AuthenticationService;
 import com.morris.quizly.services.NotificationService;
 import com.morris.quizly.services.QuizlyUserDetailsService;
 import com.morris.quizly.services.RecaptchaService;
@@ -11,16 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +27,7 @@ import java.util.UUID;
 public class AuthController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
-    private final AuthenticationManager authenticationManager;
+    private final AuthenticationService authenticationService;
     private final JwtTokenProvider jwtTokenProvider;
     private final QuizlyUserDetailsService quizlyUserDetailsService;
     private final NotificationService notificationService;
@@ -57,41 +52,24 @@ public class AuthController {
     private static final String SUCCESS = "success";
 
     @Autowired
-    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider,
-                          QuizlyUserDetailsService quizlyDetailsService, RecaptchaService recaptchaService,
-                          NotificationService notificationService, PasswordEncoder passwordEncoder) {
-        this.authenticationManager = authenticationManager;
+    public AuthController(JwtTokenProvider jwtTokenProvider, QuizlyUserDetailsService quizlyDetailsService,
+                          RecaptchaService recaptchaService, NotificationService notificationService,
+                          PasswordEncoder passwordEncoder, AuthenticationService authenticationService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.quizlyUserDetailsService = quizlyDetailsService;
         this.notificationService = notificationService;
         this.recaptchaService = recaptchaService;
         this.passwordEncoder = passwordEncoder;
+        this.authenticationService = authenticationService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@ModelAttribute AuthRequest request) {
         try {
-            // Note: Springboot reads the properties on the user object: accountNonExpired, accountNonLocked, CredentialsNonExpired
-            // and will not authenticate users if these properties are not in the correct state and instead will return values such
-            // as 'Bad credentials', 'User Account is locked' etc
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmailAddress(), request.getPassword())
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            // Note: getUserName() and getEmailAddress() are being interchanged. This is because quizly usernames
-            // are indeed their emailAddress. You can see this below in the signup process.
-            com.morris.quizly.models.security.UserDetails userDetails = (com.morris.quizly.models.security.UserDetails) authentication.getPrincipal();
-            String token = jwtTokenProvider.createToken(userDetails.getUsername(), userDetails.getRoles());
-            String refreshToken = jwtTokenProvider.createRefreshToken(request.getEmailAddress());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put(USER_DETAILS, userDetails);
-            response.put(ACCESS_TOKEN, token);
-            response.put(REFRESH_TOKEN, refreshToken);
+            Map<String, Object> authenticationResponse = authenticationService.authenticateLogin(request);
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(response);
+                    .body(authenticationResponse);
         } catch (AuthenticationException e) {
             LOGGER.info("ERROR: {}", e.getMessage());
             Map<String, Object> errorResponse = Map.of(
@@ -105,51 +83,28 @@ public class AuthController {
 
     @PostMapping("/refresh_token")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
-        String refreshToken = request.get(REFRESH_TOKEN);
-        if (refreshToken == null || refreshToken.isEmpty()) {
+        if (authenticationService.isEmptyRefreshToken(request.get(REFRESH_TOKEN))) {
             return ResponseEntity.badRequest()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(MISSING_REFRESH_TOKEN);
         }
-        try {
-            if (jwtTokenProvider.validateToken(refreshToken)) {
-                String emailAddress = jwtTokenProvider.getUsername(refreshToken);
-                com.morris.quizly.models.security.UserDetails userDetails = quizlyUserDetailsService.loadUserByUsername(emailAddress);
-                if (userDetails == null) {
-                    return ResponseEntity
-                            .status(403)
-                            .body(ERROR_REFRESH_TOKEN);
-                }
-                String newAccessToken = jwtTokenProvider.createToken(emailAddress, userDetails.getRoles());
-                String newRefreshToken = jwtTokenProvider.createRefreshToken(emailAddress);
-                return ResponseEntity.ok(Map.of(
-                        ACCESS_TOKEN, newAccessToken,
-                        REFRESH_TOKEN, newRefreshToken,
-                        USER_DETAILS, userDetails
-                ));
-            } else {
-                Map<String, Object> errorResponse = Map.of(
-                        ERROR, ERROR_REFRESH_TOKEN
-                );
-                return ResponseEntity.status(403)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(errorResponse);
-            }
-        } catch (UsernameNotFoundException e) {
-            Map<String, Object> errorResponse = Map.of(
-                    ERROR, ERROR_REFRESH_TOKEN
-            );
-            return ResponseEntity.status(403)
+        Map<String, Object> authenticationResponse = authenticationService.refreshToken(request);
+        if (!authenticationResponse.isEmpty()) {
+            return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(errorResponse);
+                    .body(authenticationResponse);
         }
+        Map<String, Object> errorResponse = Map.of(
+                ERROR, ERROR_REFRESH_TOKEN
+        );
+        return ResponseEntity.status(403)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorResponse);
     }
 
     @GetMapping("/validate_token")
     public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String tokenHeader) {
-        String token = tokenHeader.substring(7);
-        boolean isValid = jwtTokenProvider.validateToken(token);
-        if (isValid) {
+        if (authenticationService.isValidToken(tokenHeader)) {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(true);
@@ -163,11 +118,7 @@ public class AuthController {
 
     @GetMapping("/validate-onetime-session-token")
     public ResponseEntity<UserDetails> validateSessionToken(@RequestParam("token") String token) {
-        if (!jwtTokenProvider.validateToken(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String username = jwtTokenProvider.getUsername(token);
-        UserDetails user = quizlyUserDetailsService.loadUserByUsername(username);
+        UserDetails user = authenticationService.validateOneTimeSessionToken(token);
         if (null == user) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
