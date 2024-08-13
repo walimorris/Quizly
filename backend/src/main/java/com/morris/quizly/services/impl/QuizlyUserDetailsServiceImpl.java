@@ -79,6 +79,7 @@ public class QuizlyUserDetailsServiceImpl implements QuizlyUserDetailsService {
         mongoTemplate.updateFirst(query, update, UserDetails.class);
     }
 
+    // TODO: add a counter here, users make mistakes such as email deletes but we need to protect from spam
     @Override
     public void updateAndSetPasswordResetToken(UserDetails user, String token) {
         Query query = new Query(Criteria.where("emailAddress").is(user.getEmailAddress()));

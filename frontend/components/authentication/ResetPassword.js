@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import { useLocation } from 'react-router-dom';
 import {createTheme, ThemeProvider} from "@mui/material/styles";
 import Container from "@mui/material/Container";
@@ -19,11 +19,9 @@ const defaultTheme = createTheme({
     }
 });
 
-// TODO: hide password keys
-// TODO: provide success message
 // TODO: provide time warning to user somewhere in the process (email, page, etc)
-// TODO: On success, invalidate the one time use session token on the backend and redirect to login
 const PasswordReset = () => {
+    const formRef = useRef(null);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
@@ -80,6 +78,7 @@ const PasswordReset = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const form = formRef.current;
 
         if (password !== confirmPassword) {
             setPasswordError('Passwords do not match');
@@ -95,6 +94,8 @@ const PasswordReset = () => {
             });
             if (response.ok) {
                 setPasswordChanged(true);
+                form.reset();
+                window.location.href = "/login";
             } else {
                 setError('Password Change Failure.');
             }
@@ -122,7 +123,7 @@ const PasswordReset = () => {
                     <Typography component="h1" variant="h5">
                         Password Reset
                     </Typography>
-                    <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
+                    <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }} ref={formRef}>
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
                                 <TextField
@@ -131,6 +132,7 @@ const PasswordReset = () => {
                                     id="password"
                                     label="New Password"
                                     name="password"
+                                    type="password"
                                     value={password}
                                     onChange={handlePasswordChange}
                                 />
@@ -142,6 +144,7 @@ const PasswordReset = () => {
                                     id="confirm-password"
                                     label="Confirm Password"
                                     name="confirm-password"
+                                    type="password"
                                     value={confirmPassword}
                                     onChange={handleConfirmPasswordChange}
                                 />
