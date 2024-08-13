@@ -3,6 +3,8 @@ target/
 /target/
 /node/
 /node_modules/
+backend/src/main/resources/static/built/bundle.js
+frontend/static/built/bundle.js
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
