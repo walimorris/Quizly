@@ -1,6 +1,9 @@
 package com.morris.quizly.services;
 
 import com.morris.quizly.models.locales.Language;
+import com.morris.quizly.models.quiz.Quiz;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 
 import java.util.List;
@@ -28,13 +31,6 @@ public interface OpenAiService {
      */
     List<Double> embedWithOpenAiAda002TextEmbeddings(byte[] pdfContent);
 
-    /**
-     * Get OpenAI quiz {@link ContentRetriever}. This method is specific
-     * to OpenAI by supplying the ContentRetriever with OpenAI Embedding
-     * Model. Furthermore, this specific ContentRetriever is responsible
-     * for supplying content from MongoDB vector database.
-     *
-     * @return {@link ContentRetriever}
-     */
-    ContentRetriever getOpenAiQuizContentRetriever();
+    String generateQuizResponseWithDocumentContext(String prompt, Language language);
+    List<Quiz> getMatchingQuizDocuments(EmbeddingModel embeddingModel, String prompt);
 }

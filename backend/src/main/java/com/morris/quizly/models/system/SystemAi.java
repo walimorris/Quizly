@@ -30,4 +30,23 @@ public interface SystemAi {
      */
     @UserMessage(fromResource = "/prompts/basic-quiz-format-bg.txt")
     String openAiQuizPromptBG(@V("message") String userMessage);
+
+    /**
+     * OpenAi Quiz prompt, with context, for the English language.
+     *
+     * @param userMessage prompt for AI system that contains the user input
+     * @return {@link String} AI system response
+     */
+    @UserMessage(fromResource = "/prompts/quiz-with-context-format-en.txt")
+    String openAiWithContextQuizPromptEN(@V("message") String userMessage, @V("context") String context);
+
+    /**
+     * OpenAi Quiz prompt, with context for the Bulgarian language.
+     *
+     * @param userMessage prompt for AI system that contains the user input
+     * @return {@link String} AI system response
+     */
+    @UserMessage(fromResource = "/prompts/quiz-with-context-format-bg.txt")
+    String openAiWithContextQuizPromptBG(@V("message") String userMessage, @V("context") String context);
+
 }

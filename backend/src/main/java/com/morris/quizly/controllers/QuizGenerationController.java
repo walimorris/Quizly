@@ -1,5 +1,6 @@
 package com.morris.quizly.controllers;
 
+import com.morris.quizly.models.locales.Language;
 import com.morris.quizly.models.quiz.Quiz;
 import com.morris.quizly.models.quiz.QuizRequest;
 import com.morris.quizly.models.quiz.QuizlyQuestionGroup;
@@ -16,10 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -90,5 +88,14 @@ public class QuizGenerationController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(null);
+    }
+
+    // TODO: integrate QuizRequest here into this process
+    @PostMapping("/complex")
+    public ResponseEntity<?> getDocumentMatches(@RequestParam String prompt, @RequestParam Language language) {
+        String response = openAiService.generateQuizResponseWithDocumentContext(prompt, language);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
     }
 }

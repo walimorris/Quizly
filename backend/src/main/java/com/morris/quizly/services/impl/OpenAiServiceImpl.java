@@ -1,7 +1,11 @@
 package com.morris.quizly.services.impl;
 
-import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.search.FieldSearchPath;
+import com.mongodb.client.model.search.SearchPath;
 import com.morris.quizly.models.locales.Language;
+import com.morris.quizly.models.quiz.Quiz;
 import com.morris.quizly.models.security.ConfigurationComponent;
 import com.morris.quizly.models.system.SystemAi;
 import com.morris.quizly.services.OpenAiService;
@@ -10,21 +14,26 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModelName;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
-import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.store.embedding.mongodb.MongoDbEmbeddingStore;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.conversions.Bson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.mongodb.client.model.Aggregates.project;
+import static com.mongodb.client.model.Aggregates.vectorSearch;
+import static com.mongodb.client.model.Projections.*;
+import static java.util.Arrays.asList;
 
 @Service
 public class OpenAiServiceImpl implements OpenAiService {
@@ -35,13 +44,17 @@ public class OpenAiServiceImpl implements OpenAiService {
     private static final String QUIZ_GENERATION_ERROR = "Error generating quiz response: {}";
     private static final String UNSUCCESSFUL = "Unsuccessful";
 
-    private final ConfigurationComponent configurationComponent;
-    private final MongoClient mongoClient;
+    private final ConfigurationComponent configurationComponent;;
+    private final MongoTemplate mongoTemplate;
+    private final CodecRegistry codecRegistry;
 
     @Autowired
-    public OpenAiServiceImpl(ConfigurationComponent configurationComponent, MongoClient mongoClient) {
+    public OpenAiServiceImpl(ConfigurationComponent configurationComponent,
+                             MongoTemplate mongoTemplate,
+                             CodecRegistry codecRegistry) {
         this.configurationComponent = configurationComponent;
-        this.mongoClient = mongoClient;
+        this.mongoTemplate = mongoTemplate;
+        this.codecRegistry = codecRegistry;
     }
 
     @Override
@@ -74,6 +87,50 @@ public class OpenAiServiceImpl implements OpenAiService {
     }
 
     @Override
+    public String generateQuizResponseWithDocumentContext(String prompt, Language language) {
+        EmbeddingModel embeddingModel = new OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder()
+                .modelName(OpenAiEmbeddingModelName.TEXT_EMBEDDING_ADA_002)
+                .apiKey(configurationComponent.getOpenAiApiKey())
+                .maxRetries(2)
+                .build();
+
+        // We can get the matching documents in our vector from the prompt and collect
+        // the questionsGroups and pass this as context to our AI system. This ensures
+        // we generate unique quizzes
+        List<Quiz> quizMatches = getMatchingQuizDocuments(embeddingModel, prompt);
+        List<String> questionsGroups = new ArrayList<>();
+        quizMatches.forEach(quiz -> {
+            if (quiz.getLanguage().equals(language)) {
+                LOGGER.info("{}", quiz.getQuizTitle());
+                LOGGER.info("{}", quiz.getQuestionsGroup().toString());
+                questionsGroups.add(quiz.getQuestionsGroup().toString());
+            }
+        });
+        ChatLanguageModel chatLanguageModel = OpenAiChatModel.builder()
+                .apiKey(configurationComponent.getOpenAiApiKey())
+                .modelName(GPT_4o)
+                .timeout(Duration.ofSeconds(30))
+                .build();
+
+        SystemAi systemAi = AiServices.builder(SystemAi.class)
+                .chatLanguageModel(chatLanguageModel)
+                .build();
+
+        String systemAiResponse = null;
+        switch(language) {
+            case EN -> systemAiResponse = systemAi.openAiWithContextQuizPromptEN(
+                    prompt,
+                    questionsGroups.toString()
+            );
+            case BG -> systemAiResponse = systemAi.openAiWithContextQuizPromptBG(
+                    prompt,
+                    questionsGroups.toString()
+            );
+        }
+        return systemAiResponse;
+    }
+
+    @Override
     public List<Double> embedWithOpenAiAda002TextEmbeddings(byte[] pdfContent) {
         String pdfTextContent;
 
@@ -97,26 +154,51 @@ public class OpenAiServiceImpl implements OpenAiService {
         return new ArrayList<>();
     }
 
+    // For now, we must roll our own search results for matching documents
+    // until langchain4j supports correct mongodb atlas dependencies that
+    // will enable us to use the MongoDBEmbeddingStore in our project.
     @Override
-    public ContentRetriever getOpenAiQuizContentRetriever() {
-        EmbeddingModel embeddingModel = new OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder()
-                .modelName(OpenAiEmbeddingModelName.TEXT_EMBEDDING_ADA_002)
-                .apiKey(configurationComponent.getOpenAiApiKey())
-                .maxRetries(2)
-                .build();
+    public List<Quiz> getMatchingQuizDocuments(EmbeddingModel embeddingModel, String prompt) {
+        List<Quiz> quizResults  = new ArrayList<>();
+        if (!prompt.isEmpty()) {
+            List<Float> promptVectorEmbedding = embeddingModel.embed(prompt).content().vectorAsList();
+            List<Double> promptEmbedding = promptVectorEmbedding.stream()
+                    .mapToDouble(f -> f)
+                    .boxed()
+                    .toList();
+            if (!promptEmbedding.isEmpty()) {
+                MongoDatabase database = mongoTemplate.getDb().withCodecRegistry(codecRegistry);
+                MongoCollection<Quiz> collection = database.getCollection("quizzes", Quiz.class);
+                FieldSearchPath fieldSearchPath = SearchPath.fieldPath("pdfEmbeddings");
 
-        MongoDbEmbeddingStore embeddingStore = MongoDbEmbeddingStore.builder()
-                .fromClient(mongoClient)
-                .databaseName(configurationComponent.getMongoDatabase())
-                .collectionName(configurationComponent.getQuizCollection())
-                .indexName(configurationComponent.getQuizVectorIndex())
-                .build();
+                int candidates = 200;
+                int limit = 10;
 
-        return EmbeddingStoreContentRetriever.builder()
-                .embeddingStore(embeddingStore)
-                .embeddingModel(embeddingModel)
-                .maxResults(10)
-                .minScore(0.5)
-                .build();
+                List<Bson> pipeline = asList(
+                        vectorSearch(
+                                fieldSearchPath,
+                                promptEmbedding,
+                                "quiz_pdf_vector_index",
+                                candidates,
+                                limit
+                        ),
+                        project(
+                               fields(metaVectorSearchScore("score"),
+                                       include("_id"),
+                                       include("userId"),
+                                       include("quizTitle"),
+                                       include("questionsGroup"),
+                                       include("pdfContent"),
+                                       include("pdfEmbeddings"),
+                                       include("pdfImage"),
+                                       include("language")
+                               )
+                        )
+                );
+                // run query and marshall results
+                collection.aggregate(pipeline).forEach(quizResults::add);
+            }
+        }
+        return quizResults;
     }
 }
