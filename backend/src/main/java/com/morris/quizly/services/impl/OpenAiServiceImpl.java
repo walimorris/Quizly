@@ -30,8 +30,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.mongodb.client.model.Aggregates.project;
-import static com.mongodb.client.model.Aggregates.vectorSearch;
+import static com.mongodb.client.model.Aggregates.*;
+import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Projections.*;
 import static java.util.Arrays.asList;
 
@@ -42,7 +43,21 @@ public class OpenAiServiceImpl implements OpenAiService {
     private static final String GPT_4o = "gpt-4o";
 
     private static final String QUIZ_GENERATION_ERROR = "Error generating quiz response: {}";
+    private static final String ERROR_EXTRACTING_PDF_CONTENT = "Error extracting PDF content: {}";
+    private static final String NO_TEXT_EXTRACTED = "No text extracted from PDF content.";
     private static final String UNSUCCESSFUL = "Unsuccessful";
+
+    private static final String PDF_VECTOR_INDEX = "quiz_pdf_vector_index";
+    private static final String USER_ID = "userId";
+    private static final String LANGUAGE = "language";
+    private static final String SCORE = "score";
+    private static final String _ID = "_id";
+    private static final String QUIZ_TITLE = "quizTitle";
+    private static final String QUESTIONS_GROUP = "questionsGroup";
+    private static final String PDF_CONTENT = "pdfContent";
+    private static final String PDF_EMBEDDINGS = "pdfEmbeddings";
+    private static final String PDF_IMAGE = "pdfImage";
+    private static final String QUIZZES = "quizzes";
 
     private final ConfigurationComponent configurationComponent;;
     private final MongoTemplate mongoTemplate;
@@ -72,12 +87,8 @@ public class OpenAiServiceImpl implements OpenAiService {
                     .build();
 
             switch(language) {
-                case EN -> {
-                    systemAiResponse = systemAi.openAiQuizPromptEN(prompt);
-                }
-                case BG -> {
-                    systemAiResponse = systemAi.openAiQuizPromptBG(prompt);
-                }
+                case EN -> systemAiResponse = systemAi.openAiQuizPromptEN(prompt);
+                case BG -> systemAiResponse = systemAi.openAiQuizPromptBG(prompt);
             }
         } catch (Exception e) {
             LOGGER.error(QUIZ_GENERATION_ERROR, e.getMessage());
@@ -87,7 +98,7 @@ public class OpenAiServiceImpl implements OpenAiService {
     }
 
     @Override
-    public String generateQuizResponseWithDocumentContext(String prompt, Language language) {
+    public String generateQuizResponseWithDocumentContext(String userId, String prompt, Language language) {
         EmbeddingModel embeddingModel = new OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder()
                 .modelName(OpenAiEmbeddingModelName.TEXT_EMBEDDING_ADA_002)
                 .apiKey(configurationComponent.getOpenAiApiKey())
@@ -97,12 +108,11 @@ public class OpenAiServiceImpl implements OpenAiService {
         // We can get the matching documents in our vector from the prompt and collect
         // the questionsGroups and pass this as context to our AI system. This ensures
         // we generate unique quizzes
-        List<Quiz> quizMatches = getMatchingQuizDocuments(embeddingModel, prompt);
+        List<Quiz> quizMatches = getMatchingQuizDocuments(userId, language, prompt, embeddingModel);
         List<String> questionsGroups = new ArrayList<>();
         quizMatches.forEach(quiz -> {
-            if (quiz.getLanguage().equals(language)) {
-                LOGGER.info("{}", quiz.getQuizTitle());
-                LOGGER.info("{}", quiz.getQuestionsGroup().toString());
+            if (quiz.getScore() > .85f) {
+                LOGGER.info("{}", quiz.getScore());
                 questionsGroups.add(quiz.getQuestionsGroup().toString());
             }
         });
@@ -138,7 +148,7 @@ public class OpenAiServiceImpl implements OpenAiService {
             PDFTextStripper pdfTextStripper = new PDFTextStripper();
             pdfTextContent = pdfTextStripper.getText(document);
         } catch (IOException e) {
-            LOGGER.info("Error extracting PDF content: {}", e.getMessage());
+            LOGGER.info(ERROR_EXTRACTING_PDF_CONTENT, e.getMessage());
             return new ArrayList<>();
         }
         if (null != pdfTextContent && !pdfTextContent.isEmpty()) {
@@ -150,15 +160,12 @@ public class OpenAiServiceImpl implements OpenAiService {
             List<Float> embeddings = embeddingModel.embed(pdfTextContent).content().vectorAsList();
             return embeddings.stream().mapToDouble(f -> f).boxed().toList();
         }
-        LOGGER.warn("No text extracted from PDF content.");
+        LOGGER.warn(NO_TEXT_EXTRACTED);
         return new ArrayList<>();
     }
 
-    // For now, we must roll our own search results for matching documents
-    // until langchain4j supports correct mongodb atlas dependencies that
-    // will enable us to use the MongoDBEmbeddingStore in our project.
     @Override
-    public List<Quiz> getMatchingQuizDocuments(EmbeddingModel embeddingModel, String prompt) {
+    public List<Quiz> getMatchingQuizDocuments(String userId, Language language, String prompt, EmbeddingModel embeddingModel) {
         List<Quiz> quizResults  = new ArrayList<>();
         if (!prompt.isEmpty()) {
             List<Float> promptVectorEmbedding = embeddingModel.embed(prompt).content().vectorAsList();
@@ -168,30 +175,36 @@ public class OpenAiServiceImpl implements OpenAiService {
                     .toList();
             if (!promptEmbedding.isEmpty()) {
                 MongoDatabase database = mongoTemplate.getDb().withCodecRegistry(codecRegistry);
-                MongoCollection<Quiz> collection = database.getCollection("quizzes", Quiz.class);
-                FieldSearchPath fieldSearchPath = SearchPath.fieldPath("pdfEmbeddings");
+                MongoCollection<Quiz> collection = database.getCollection(QUIZZES, Quiz.class);
+                FieldSearchPath fieldSearchPath = SearchPath.fieldPath(PDF_EMBEDDINGS);
 
                 int candidates = 200;
                 int limit = 10;
 
+                // can can filter further to ensure documents are matched by user
+                // and document language
                 List<Bson> pipeline = asList(
                         vectorSearch(
                                 fieldSearchPath,
                                 promptEmbedding,
-                                "quiz_pdf_vector_index",
+                                PDF_VECTOR_INDEX,
                                 candidates,
                                 limit
                         ),
+                        match(and(
+                                eq(USER_ID, userId),
+                                eq(LANGUAGE, language)
+                        )),
                         project(
-                               fields(metaVectorSearchScore("score"),
-                                       include("_id"),
-                                       include("userId"),
-                                       include("quizTitle"),
-                                       include("questionsGroup"),
-                                       include("pdfContent"),
-                                       include("pdfEmbeddings"),
-                                       include("pdfImage"),
-                                       include("language")
+                               fields(metaVectorSearchScore(SCORE),
+                                       include(_ID),
+                                       include(USER_ID),
+                                       include(QUIZ_TITLE),
+                                       include(QUESTIONS_GROUP),
+                                       include(PDF_CONTENT),
+                                       include(PDF_EMBEDDINGS),
+                                       include(PDF_IMAGE),
+                                       include(LANGUAGE)
                                )
                         )
                 );

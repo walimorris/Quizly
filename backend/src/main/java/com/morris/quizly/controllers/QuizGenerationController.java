@@ -1,6 +1,5 @@
 package com.morris.quizly.controllers;
 
-import com.morris.quizly.models.locales.Language;
 import com.morris.quizly.models.quiz.Quiz;
 import com.morris.quizly.models.quiz.QuizRequest;
 import com.morris.quizly.models.quiz.QuizlyQuestionGroup;
@@ -10,14 +9,19 @@ import com.morris.quizly.models.system.SystemFlag;
 import com.morris.quizly.services.OpenAiService;
 import com.morris.quizly.services.QuizlyDocumentService;
 import com.morris.quizly.services.SystemFlaggingService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.util.List;
@@ -90,10 +94,14 @@ public class QuizGenerationController {
                 .body(null);
     }
 
-    // TODO: integrate QuizRequest here into this process
     @PostMapping("/complex")
-    public ResponseEntity<?> getDocumentMatches(@RequestParam String prompt, @RequestParam Language language) {
-        String response = openAiService.generateQuizResponseWithDocumentContext(prompt, language);
+    public ResponseEntity<?> getDocumentMatches(@Valid @RequestBody QuizRequest quizRequest, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body("unsuccessful");
+        }
+        String numberOfQuestions = String.format("Generate %d questions. ", quizRequest.getNumberOfQuestions());
+        String enhancedPrompt = String.format("%s %s", numberOfQuestions, quizRequest.getPrompt());
+        String response = openAiService.generateQuizResponseWithDocumentContext(quizRequest.getUserId(), enhancedPrompt, quizRequest.getLanguage());
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);

@@ -36,6 +36,9 @@ public class Quiz {
     private String pdfImage;
     private Language language;
 
+    // relevant for vector search scoring
+    private float score;
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime createdDate;
 }

@@ -22,14 +22,16 @@ public interface OpenAiService {
     String generateBasicQuizResponse(String prompt, Language language);
 
     /**
-     * Generate quiz generation response given context.
+     * Generate quiz generation response with given context. This ensures that
+     * generated quizzes are unique for users.
      *
+     * @param userId   {@link String} userId
      * @param prompt   {@link String} user prompt
      * @param language {@link Language} language
      *
      * @return {@link String}
      */
-    String generateQuizResponseWithDocumentContext(String prompt, Language language);
+    String generateQuizResponseWithDocumentContext(String userId, String prompt, Language language);
 
     /**
      * Creates embeddings using OpenAi's Ada002TextEmbeddings model.
@@ -41,11 +43,16 @@ public interface OpenAiService {
 
     /**
      * Get {@link List} of matching quizzes based on given user prompt.
+     * For now, we must roll our own search results for matching documents
+     * until langchain4j supports correct mongodb atlas dependencies that
+     * will enable us to use the MongoDBEmbeddingStore in our project.
      *
-     * @param embeddingModel {@link EmbeddingModel}
+     * @param userId         {@link String} userId
+     * @param language       {@link Language} language
+     * @param embeddingModel {@link EmbeddingModel} embedding model
      * @param prompt         {@link String} user prompt
      *
      * @return {@link List<Quiz>}
      */
-    List<Quiz> getMatchingQuizDocuments(EmbeddingModel embeddingModel, String prompt);
+    List<Quiz> getMatchingQuizDocuments(String userId, Language language, String prompt, EmbeddingModel embeddingModel);
 }
