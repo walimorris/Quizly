@@ -3,8 +3,6 @@ package com.morris.quizly.services;
 import com.morris.quizly.models.locales.Language;
 import com.morris.quizly.models.quiz.Quiz;
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.rag.content.Content;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
 
 import java.util.List;
 
@@ -24,6 +22,16 @@ public interface OpenAiService {
     String generateBasicQuizResponse(String prompt, Language language);
 
     /**
+     * Generate quiz generation response given context.
+     *
+     * @param prompt   {@link String} user prompt
+     * @param language {@link Language} language
+     *
+     * @return {@link String}
+     */
+    String generateQuizResponseWithDocumentContext(String prompt, Language language);
+
+    /**
      * Creates embeddings using OpenAi's Ada002TextEmbeddings model.
      *
      * @param pdfContent byte[] pdfContent
@@ -31,6 +39,13 @@ public interface OpenAiService {
      */
     List<Double> embedWithOpenAiAda002TextEmbeddings(byte[] pdfContent);
 
-    String generateQuizResponseWithDocumentContext(String prompt, Language language);
+    /**
+     * Get {@link List} of matching quizzes based on given user prompt.
+     *
+     * @param embeddingModel {@link EmbeddingModel}
+     * @param prompt         {@link String} user prompt
+     *
+     * @return {@link List<Quiz>}
+     */
     List<Quiz> getMatchingQuizDocuments(EmbeddingModel embeddingModel, String prompt);
 }
