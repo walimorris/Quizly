@@ -35,6 +35,8 @@ public class Quiz {
     private List<Double> pdfEmbeddings;
     private String pdfImage;
     private Language language;
+    private String prompt;
+    private List<String> recommendations;
 
     // relevant for vector search scoring
     private float score;

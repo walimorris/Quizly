@@ -1,6 +1,7 @@
     HELP.md
 target/
 /target/
+/lambda/target
 /node/
 /node_modules/
 backend/src/main/resources/static/built/bundle.js

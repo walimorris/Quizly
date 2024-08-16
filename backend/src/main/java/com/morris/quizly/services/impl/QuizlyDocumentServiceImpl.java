@@ -98,6 +98,7 @@ public class QuizlyDocumentServiceImpl implements QuizlyDocumentService {
                 .createdDate(LocalDateTime.now())
                 .language(quizRequest.getLanguage())
                 .pdfEmbeddings(pdfEmbeddings)
+                .prompt(quizRequest.getPrompt()) // save the prompt that generated the quiz
                 .build();
 
         quizRepository.save(quiz);
