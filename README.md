@@ -11,6 +11,7 @@ Quizly is an application that generates quizzes on the fly, on any domain or top
 - Sharable documents for fun with friends
 - Timed quiz mode to up your game
 - Supports multiple languages (English, Bulgarian)
+- RAG (Retrieval Augmented Generation)
 
 ## Teaser
 
